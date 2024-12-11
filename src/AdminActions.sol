@@ -31,9 +31,14 @@ contract AdminActions {
     event VoteAdded(uint indexed nid, string name, uint totalVotes);
 
     // Constructor
-    constructor() {
-        admin = msg.sender; // Set the deployer as the admin
-    }
+    // constructor() {
+    //     admin = msg.sender; // Set the deployer as the admin
+    // }
+
+    constructor(address _admin) {
+    admin = _admin;
+}
+
 
     // Modifier to restrict access to admin only
     modifier onlyAdmin() {
@@ -42,6 +47,11 @@ contract AdminActions {
         }
         _;
     }
+    function setAdmin(address _admin) external {
+    require(admin == address(0), "Admin already set"); // Prevent setting admin again
+    admin = _admin;
+}
+
 
     // Modifier to allow access to admin or VoterRegistry
     modifier onlyAdminOrVoterRegistry() {
