@@ -25,6 +25,11 @@ contract AdminActions {
     error OnlyAdmin();
     error OnlyAdminOrVoterRegistry();
     error CandidateAlreadyExists();
+    error InvalidAddress();
+    error InvalidCandidateName();
+    error InvalidCandidateNid(); // Newly added error
+    error InvalidVoterRegistry();
+    error CandidateNotFound();
 
     // Events
     event CandidateAdded(uint indexed nid, string name);
@@ -48,9 +53,9 @@ contract AdminActions {
         _;
     }
     function setAdmin(address _admin) external {
-    require(admin == address(0), "Admin already set"); // Prevent setting admin again
-    admin = _admin;
-}
+        require(admin == address(0), "Admin already set"); // Prevent setting admin again
+        admin = _admin;
+    }
 
 
     // Modifier to allow access to admin or VoterRegistry
@@ -66,6 +71,10 @@ contract AdminActions {
      * @param _voterRegistryContract The address of the VoterRegistry contract.
      */
     function setVoterRegistry(address _voterRegistryContract) external onlyAdmin {
+        if (_voterRegistryContract == address(0) || _voterRegistryContract == voterRegistryContract) {
+            revert InvalidAddress();
+            revert InvalidVoterRegistry();
+        }
         voterRegistryContract = _voterRegistryContract;
     }
 
@@ -75,6 +84,14 @@ contract AdminActions {
      * @param _name The candidate's name.
      */
     function addCandidate(uint _nid, string calldata _name) external onlyAdmin {
+        if (_nid == 0) {
+            revert InvalidCandidateNid(); // Validate that NID is non-zero
+        }
+        
+        if (bytes(_name).length == 0) {
+            revert InvalidCandidateName(); // Validate candidate name is not empty
+        }
+       
         // Ensure candidate doesn't already exist
         if (bytes(candidates[_nid].name).length != 0) {
             revert CandidateAlreadyExists();
@@ -93,7 +110,13 @@ contract AdminActions {
      * @param _nid The candidate's NID.
      */
     function addVoteToCandidate(uint _nid) external onlyAdminOrVoterRegistry {
+        if (voterRegistryContract == address(0)) {
+        revert InvalidVoterRegistry();
+        revert CandidateNotFound();
+    }
+        
         Candidate storage candidate = candidates[_nid];
+        
         candidate.votes++;
 
         emit VoteAdded(_nid, candidate.name, candidate.votes);
